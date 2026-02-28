@@ -1,23 +1,27 @@
-import 'package:daraz_app/features/log_in/presentation/log_in.dart';
+import 'package:auto_animated/auto_animated.dart';
+import 'package:daraz_app/helpers/di.dart';
+import 'package:daraz_app/route/app_pages.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
-import 'di_container.dart' as di;
+import 'package:get_storage/get_storage.dart';
+import 'package:provider/provider.dart';
 
-void main() async {
+import 'helpers/helper_methods.dart';
+import 'helpers/navigation_service.dart';
+import 'helpers/register_provider.dart';
+import 'networks/dio/dio.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.white,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-    ),
-  );
 
-  await di.init();
-  runApp(const MyApp());
+  await GetStorage.init();
+  diSetup();
+  initiInternetChecker();
+  DioSingleton.instance.create();
+
+  runApp(MultiProvider(providers: providers, child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -25,30 +29,34 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: const Size(375, 812),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) {
-        return GetMaterialApp(
-          debugShowCheckedModeBanner: false,
-          // localizationsDelegates: [
-          //   GlobalMaterialLocalizations.delegate,
-          //   GlobalCupertinoLocalizations.delegate,
-          //   GlobalWidgetsLocalizations.delegate,
-          //   FlutterQuillLocalizations.delegate,
-          // ],
-          title: 'Daraz App',
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-            useMaterial3: true,
-          ),
-          home: LoginScreen(),
+    rotation();
+    setInitValue();
 
-          //  initialRoute:SplashScreen.routeName,
-          //  getPages: AppRoutes.appRoutes,
-        );
-      },
+    return AnimateIfVisibleWrapper(
+      showItemInterval: const Duration(milliseconds: 150),
+      child: ScreenUtilInit(
+        designSize: const Size(375, 812),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (_, __) {
+          return GetMaterialApp(
+            title: "Daraz App",
+            debugShowCheckedModeBanner: false,
+            navigatorKey: NavigationService.navigatorKey,
+            builder: EasyLoading.init(),
+            themeMode: ThemeMode.system,
+            theme: ThemeData(
+              scaffoldBackgroundColor: Colors.white,
+              primaryColor: const Color(0xFF440007),
+              fontFamily: 'Inter',
+              useMaterial3: true,
+            ),
+            initialRoute: AppPages.initial,
+            getPages: AppPages.routes,
+        
+          );
+        },
+      ),
     );
   }
 }
